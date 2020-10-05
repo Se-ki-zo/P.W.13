@@ -20,9 +20,17 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.send({
       data: card,
     }))
-    .catch((err) => res.status(400).send({
-      message: err,
-    }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(400).send({
+          message: 'Переданы некорректные данные',
+        });
+      } else {
+        res.status(500).send({
+          message: 'Ошибка сервера',
+        });
+      }
+    });
 };
 
 module.exports.returnCards = (req, res) => {
@@ -36,11 +44,19 @@ module.exports.returnCards = (req, res) => {
 };
 
 module.exports.deleteCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.id)
+  Card.findByIdAndRemove(req.params.id).orFail(new Error('NotValidId'))
     .then((card) => res.send({
       data: card,
     }))
-    .catch(() => res.status(500).send({
-      message: 'На сервере произошла ошибка',
-    }));
+    .catch((err) => {
+      if (err.message === 'NotValidId') {
+        res.status(404).send({
+          message: 'Нет ресурсов по заданному Id',
+        });
+      } else {
+        res.status(500).send({
+          message: 'На сервере произошла ошибка',
+        });
+      }
+    });
 };

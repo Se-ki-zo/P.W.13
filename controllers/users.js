@@ -15,9 +15,17 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send({
       data: user,
     }))
-    .catch((err) => res.status(400).send({
-      message: err,
-    }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(400).send({
+          message: 'Переданы некорректные данные',
+        });
+      } else {
+        res.status(500).send({
+          message: 'Ошибка сервера',
+        });
+      }
+    });
 };
 
 module.exports.returnUsers = (req, res) => {
@@ -31,11 +39,19 @@ module.exports.returnUsers = (req, res) => {
 };
 
 module.exports.findUser = (req, res) => {
-  User.findById(req.params.id)
+  User.findById(req.params.id).orFail(new Error('NotValidId'))
     .then((user) => res.send({
       data: user,
     }))
-    .catch(() => res.status(404).send({
-      message: 'Запрашиваемый ресурс не найден',
-    }));
+    .catch((err) => {
+      if (err.message === 'NotValidId') {
+        res.status(404).send({
+          message: 'Нет ресурсов по заданному Id',
+        });
+      } else {
+        res.status(500).send({
+          message: 'На сервере произошла ошибка',
+        });
+      }
+    });
 };
